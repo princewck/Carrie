@@ -7,8 +7,8 @@
 
 ---
 
-Mysql + NodeJs + React + Redux
-
+Mysql + NodeJs + React + dva
+ 
 
 
 
