@@ -31,7 +31,7 @@ export default class App extends Component {
             </Menu.Item>
           </Menu>
         </Col>
-        
+
       </Row>
     );
   }

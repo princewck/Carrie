@@ -9,8 +9,12 @@ const app = dva();
 // app.use({});
 
 // 3. Model
-// app.model(require('./models/example'));
 app.model(require('./models/products'));
+app.model(require('./models/tags'));
+app.model(require('./models/subjects'));
+app.model(require('./models/chapters'));
+app.model(require('./models/questions'));
+app.model(require('./models/chapterFilter'));
 
 // 4. Router
 app.router(require('./router'));
