@@ -1,0 +1,1 @@
+npm run build && supervisor ./app/index.js

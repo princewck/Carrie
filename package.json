@@ -5,7 +5,7 @@
     "build": "roadhog build",
     "lint": "eslint --ext .js src test",
     "precommit": "npm run lint",
-    "serve": "supervisor ./src/app/index.js"
+    "serve": "sh scripts/dev.sh"
   },
   "engines": {
     "install-node": "6.11.1"
@@ -19,6 +19,7 @@
     "koa-body": "^2.5.0",
     "koa-router": "^7.2.1",
     "koa-session": "^5.5.0",
+    "koa-static-cache": "^5.1.1",
     "mysql": "^2.14.1",
     "node-sass": "^4.5.3",
     "react": "^15.4.0",

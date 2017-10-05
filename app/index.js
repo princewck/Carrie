@@ -2,6 +2,8 @@ const Koa = require('koa');
 const Router = require('koa-router');
 const koaBody = require('koa-body');
 const session = require('koa-session');
+const path = require('path');
+const staticCache = require('koa-static-cache');
 
 const app = new Koa();
 const router = new Router();
@@ -18,6 +20,10 @@ app.use(session(SESSION_CONFIG, app));
 app.use(koaBody({
   multipart: true,
   strict: false,
+}));
+
+app.use(staticCache(path.join(__dirname, '../dist'), {
+  maxAge: 365 * 24 * 60 * 60,
 }));
 
 router
