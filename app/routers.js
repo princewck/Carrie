@@ -6,13 +6,32 @@ const _ = require('lodash');
 const router = new Router();
 
 const resourceContract = {
-  get: {
+  list: {
     action: (route, data) => {
       router.get(route, async (ctx) => {
-        const rows = await data.get();
+        const rows = await data.list();
         ctx.body = rows;
       });
     },
+  },
+  get: {
+    action: (route, data) => {
+      router.get(route, async (ctx) => {
+        try {
+          const rows = await data.get(ctx.params);
+          if (!rows.length) {
+            ctx.status = 404;
+            ctx.body = { message: 'recored not found' };
+          } else {
+            ctx.body = rows[0];
+          }
+        } catch (e) {
+          ctx.status = 401;
+          ctx.body = String(e);
+        }
+      });
+    },
+    param: 'id',
   },
   post: {
     action: (route, data) => {
@@ -74,6 +93,11 @@ const resourceFactory = (route, data) => {
 
 module.exports = (app) => {
   resourceFactory('/subject', DB.Subject);
+  resourceFactory('/chapter', DB.Chapter);
+  resourceFactory('/tag', DB.Tag);
+  resourceFactory('/question', DB.Question);
+  resourceFactory('/paper', DB.Paper);
+
   router.get('/subject/disabled', async (ctx) => {
     const subjects = await DB.Subject.get(0);
     ctx.body = subjects;

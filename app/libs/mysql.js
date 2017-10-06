@@ -1,6 +1,7 @@
 const mysql = require('mysql');
 const CONFIG = require('../config');
 const _ = require('lodash');
+const moment = require('moment');
 
 const pool = mysql.createPool({
   host: CONFIG.MYSQL.HOST,
@@ -45,7 +46,14 @@ const createTable = function (sql) {
  */
 const modelFactory = function (tableName, keys, custom) {
   return _.assign({
-    get: (status) => {
+    get: (model) => {
+      if (!model.id) {
+        throw new Error('id is missing');
+      }
+      const sql = `select * from ${tableName} where id=?`;
+      return query(sql, [+model.id]);
+    },
+    list: (status) => {
       if (!(~[0, 1].indexOf(+status))) status = 1;
       const sql = `select * from ${tableName} where status=?`;
       return query(sql, [+status]);
@@ -57,7 +65,10 @@ const modelFactory = function (tableName, keys, custom) {
         throw new Error('params not valid');
       }
       _.forEach(keys, (key) => {
-        if (model[key] !== undefined) {
+        if (key === 'updated_at') {
+          _keys.push('updated_at');
+          _params.push(moment().format('YYYY-MM-DD HH:mm:ss'));
+        } else if (model[key] !== undefined) {
           _keys.push(key);
           _params.push(model[key]);
         }
@@ -74,7 +85,10 @@ const modelFactory = function (tableName, keys, custom) {
       const args = [];
       let sql = `update ${tableName} set `;
       _.forEach(keys, (key) => {
-        if (model[key] !== undefined) {
+        if (key === 'updated_at') {
+          str.push('updated_at=? ');
+          args.push(moment().format('YYYY-MM-DD HH:mm:ss'));
+        } else if (model[key] !== undefined) {
           str.push(`${key}=? `);
           args.push(model[key]);
         }
@@ -88,15 +102,23 @@ const modelFactory = function (tableName, keys, custom) {
       if (!model.id) {
         throw new Error('delete which model should be clearify, specify a id!');
       }
-      return this.put({ id: model.id, status: 0 });
+      return this.put({ id: model.id, status: 0, updated_at: moment().format('YYYY-MM-DD HH:mm:ss') });
     },
   }, custom);
 };
 
-const Subject = modelFactory('subject', ['name', 'description', 'sort', 'status']);
+const Subject = modelFactory('subject', ['name', 'description', 'sort', 'status', 'updated_at']);
+const Chapter = modelFactory('chapter', ['name', 'description', 'sort', 'status', 'updated_at']);
+const Tag = modelFactory('tag', ['name', 'description', 'image', 'sort', 'status', 'updated_at']);
+const Question = modelFactory('question', ['name', 'description', 'choices', 'remark', 'type', 'sort', 'status', 'updated_at']);
+const Paper = modelFactory('paper', ['name', 'description', 'sort', 'status', 'updated_at']);
 
 module.exports = {
   query,
   createTable,
   Subject,
+  Chapter,
+  Tag,
+  Question,
+  Paper,
 };
