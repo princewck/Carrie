@@ -5,7 +5,7 @@
     "build": "roadhog build",
     "lint": "eslint --ext .js src test",
     "precommit": "npm run lint",
-    "serve": "sh scripts/dev.sh"
+    "serve": "supervisor ./app/index.js"
   },
   "engines": {
     "install-node": "6.11.1"

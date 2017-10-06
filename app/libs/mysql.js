@@ -1,5 +1,6 @@
 const mysql = require('mysql');
-const CONFIG = require('../config/default.js');
+const CONFIG = require('../config');
+const _ = require('lodash');
 
 const pool = mysql.createPool({
   host: CONFIG.MYSQL.HOST,
@@ -27,155 +28,75 @@ const query = (sql, values) => {
   });
 };
 
-
-const users =
-  `create table if not exists users(
-     id INT NOT NULL AUTO_INCREMENT,
-     name VARCHAR(100) NOT NULL,
-     pass VARCHAR(40) NOT NULL,
-     PRIMARY KEY ( id )
-    );`;
-
-const posts =
-  `create table if not exists posts(
-     id INT NOT NULL AUTO_INCREMENT,
-     name VARCHAR(100) NOT NULL,
-     title VARCHAR(40) NOT NULL,
-     content  VARCHAR(40) NOT NULL,
-     uid  VARCHAR(40) NOT NULL,
-     moment  VARCHAR(40) NOT NULL,
-     comments  VARCHAR(40) NOT NULL DEFAULT '0',
-     pv  VARCHAR(40) NOT NULL DEFAULT '0',
-     PRIMARY KEY ( id )
-    );`;
-
-const comment =
-  `create table if not exists comment(
-     id INT NOT NULL AUTO_INCREMENT,
-     name VARCHAR(100) NOT NULL,
-     content VARCHAR(40) NOT NULL,
-     postid VARCHAR(40) NOT NULL,
-     PRIMARY KEY ( id )
-    );`;
-
 const createTable = function (sql) {
   return query(sql, []);
 };
 
-// 建表
-createTable(users);
-createTable(posts);
-createTable(comment);
-
-// 注册用户
-const insertData = function (value) {
-  const sql = 'insert into users(name,pass) values(?,?);';
-  return query(sql, value);
-};
-// 发表文章
-const insertPost = function (value) {
-  const _sql = 'insert into posts(name,title,content,uid,moment) values(?,?,?,?,?);';
-  return query(_sql, value);
-};
-// 更新文章评论数
-const updatePostComment = function (value) {
-  const _sql = 'update posts set  comments=? where id=?';
-  return query(_sql, value);
-};
-
-// 更新浏览数
-const updatePostPv = function (value) {
-  const _sql = 'update posts set  pv=? where id=?';
-  return query(_sql, value);
-};
-
-// 发表评论
-const insertComment = function (value) {
-  const _sql = 'insert into comment(name,content,postid) values(?,?,?);';
-  return query(_sql, value);
-};
-// 通过名字查找用户
-const findDataByName = function (name) {
-  const _sql = `
-    SELECT * from users
-      where name="${name}"
-      `;
-  return query(_sql);
-};
-// 通过文章的名字查找用户
-const findDataByUser = function (name) {
-  const _sql = `
-    SELECT * from posts
-      where name="${name}"
-      `;
-  return query(_sql);
-};
-// 通过文章id查找
-const findDataById = function (id) {
-  const _sql = `
-    SELECT * from posts
-      where id="${id}"
-      `;
-  return query(_sql);
-};
-// 通过评论id查找
-const findCommentById = function (id) {
-  const _sql = `
-    SELECT * FROM comment where postid="${id}"
-      `;
-  return query(_sql);
+/**
+ *
+ * @param {*} tableName
+ * @param {*} keys
+ * @param {*} custom
+ * 注意：
+ * 1. 所有表需要有status字段, 获取数据默认status=1
+ * 2. status 在插入时没有做校验，前端需要确保值为0或1，否则会报错
+ * 3. 更新数据时，使用PUT model/:id 通过唯一索引id更新其他字段。
+ * 4. 所有的数据删除(delete)方法均为软删除，即通过status=0过滤;
+ */
+const modelFactory = function (tableName, keys, custom) {
+  return _.assign({
+    get: (status) => {
+      if (!(~[0, 1].indexOf(+status))) status = 1;
+      const sql = `select * from ${tableName} where status=?`;
+      return query(sql, [+status]);
+    },
+    post: (model) => {
+      const _keys = [];
+      const _params = [];
+      if (typeof model !== 'object') {
+        throw new Error('params not valid');
+      }
+      _.forEach(keys, (key) => {
+        if (model[key] !== undefined) {
+          _keys.push(key);
+          _params.push(model[key]);
+        }
+      });
+      const sql = `insert into subject (${_keys.join(',')}) values (${_keys.map(() => '?').join(',')})`;
+      console.log('POST:', sql); // eslint-disable-line
+      return query(sql, _params);
+    },
+    put: (model) => {
+      if (!model.id || Object.keys(model).length < 2) {
+        throw new Error('nothing to update');
+      }
+      const str = [];
+      const args = [];
+      let sql = `update ${tableName} set `;
+      _.forEach(keys, (key) => {
+        if (model[key] !== undefined) {
+          str.push(`${key}=? `);
+          args.push(model[key]);
+        }
+      });
+      sql += str.join(',');
+      sql += ' where id=?';
+      console.log('PUT:', sql, _.concat(args, [model.id])); // eslint-disable-line
+      return query(sql, _.concat(args, [model.id]));
+    },
+    delete(model) {
+      if (!model.id) {
+        throw new Error('delete which model should be clearify, specify a id!');
+      }
+      return this.put({ id: model.id, status: 0 });
+    },
+  }, custom);
 };
 
-// 查询所有文章
-const findAllPost = function () {
-  const _sql = `
-    SELECT * FROM posts
-      `;
-  return query(_sql);
-};
-// 更新修改文章
-const updatePost = function (values) {
-  const _sql = 'update posts set  title=?,content=? where id=?';
-  return query(_sql, values);
-};
-// 删除文章
-const deletePost = function (id) {
-  const _sql = `delete from posts where id = ${id}`;
-  return query(_sql);
-};
-// 删除评论
-const deleteComment = function (id) {
-  const _sql = `delete from comment where id = ${id}`;
-  return query(_sql);
-};
-// 删除所有评论
-const deleteAllPostComment = function (id) {
-  const _sql = `delete from comment where postid = ${id}`;
-  return query(_sql);
-};
-// 查找评论数
-const findCommentLength = function (id) {
-  const _sql = `select content from comment where postid in (select id from posts where id=${id})`;
-  return query(_sql);
-};
-
+const Subject = modelFactory('subject', ['name', 'description', 'sort', 'status']);
 
 module.exports = {
   query,
   createTable,
-  insertData,
-  findDataByName,
-  insertPost,
-  findAllPost,
-  findDataByUser,
-  findDataById,
-  insertComment,
-  findCommentById,
-  updatePost,
-  deletePost,
-  deleteComment,
-  findCommentLength,
-  updatePostComment,
-  deleteAllPostComment,
-  updatePostPv,
+  Subject,
 };
