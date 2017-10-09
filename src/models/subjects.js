@@ -1,11 +1,48 @@
+import { query } from '../services/subjects';
+
 export default {
   namespace: 'subjects',
-  state: [
-    { name: '经济法', description: '描述信息', sort: 0, tags: 'tag1, tag2' },
-    { name: '公司战略', description: '描述信息2', sort: 0, tags: 'tag1, tag2' },
-    { name: '成本管理', description: '描述信息', sort: 0, tags: 'tag1, tag2' },
-    { name: '审计', description: '描述信息', sort: 0, tags: 'tag1, tag2' },
-  ],
+  state: {
+    list: [],
+    total: null,
+    loading: false,
+    current: null,
+    currentItem: {},
+  },
+  subscriptions: {
+    setup({ dispatch }) {
+      dispatch({
+        type: 'query',
+      });
+    },
+  },
   reducers: {
+    showLoading(state) {
+      return { ...state, loading: true };
+    },
+    querySuccess(state, action) {
+      return { ...state, ...action.payload, loading: false };
+    },
+  },
+  effects: {
+    query: [
+      function* ({ payload }, { call, put }) {
+        yield put({ type: 'showLoading' });
+        const { data } = yield call(query);
+        if (data) {
+          yield put({
+            type: 'querySuccess',
+            payload: {
+              list: data,
+              total: data.length,
+              current: 1,
+            },
+          });
+        }
+      },
+      {
+        type: 'takeLatest',
+      },
+    ],
   },
 };

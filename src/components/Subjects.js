@@ -29,8 +29,10 @@ class Subjects extends Component {
   }
 
   render() {
-    const { subjects } = this.props;
-    return <Table dataSource={subjects} columns={this.columns} rowKey={(r, index) => index} />;
+    const { list, loading } = this.props;
+    return loading
+      ? <div>正在加载...</div>
+      : <Table dataSource={list} columns={this.columns} rowKey={(r, index) => index} />;
   }
 }
 

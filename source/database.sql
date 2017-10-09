@@ -1,4 +1,5 @@
-use carrie;
+use carrie_sandbox; # sandbox
+use carrie; # production
 
 # 创建数据库
 CREATE DATABASE IF NOT EXISTS carrie default charset utf8 COLLATE utf8_general_ci;

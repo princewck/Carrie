@@ -40,11 +40,19 @@ class Chapters extends Component {
           style={{ width: 200 }}
           value={filter}
         >
-          {subjects.map((subject, index) => {
-            return <Select.Option key={index} value={subject.name}>{subject.name}</Select.Option>;
+          {subjects.list.map((subject, index) => {
+            return (
+              <Select.Option key={index} value={`${subject.id}`}>
+                {subject.name}
+              </Select.Option>
+            );
           })}
         </Select>
-        <Table dataSource={chapters} columns={this.columns} rowKey={(record, index) => index} />
+        <Table
+          dataSource={chapters.list}
+          columns={this.columns}
+          rowKey={(record, index) => index}
+        />
       </div>
     );
   }

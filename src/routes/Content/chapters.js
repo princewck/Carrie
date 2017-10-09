@@ -5,7 +5,7 @@ import Chapters from '../../components/Chapters';
 
 function updateFilter(value) {
   const { dispatch, subjects } = this.props;
-  const payload = value || (subjects[0] && subjects[0].name);
+  const payload = value || (subjects.list[0] && subjects.list[0].name) || null;
   dispatch({ type: 'chapter_filter/change', payload });
 }
 
